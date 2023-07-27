@@ -23,6 +23,10 @@ By default, `velero install` does not install Velero's [File System Backup][3]. 
 
 If you've already run `velero install` without the `--use-node-agent` flag, you can run the same command again, including the `--use-node-agent` flag, to add the file system backup to your existing install.
 
+## Block volume backup
+
+Block volume backup is supported for CSI volumes with Kopia uploader. To allow the Agent to access the block device, Agent must be installed in privileged mode. To enable it set `velero install` flags `--use-node-agent --privileged-agent --uploader-type "kopia" --features EnableCSI`.  When running a backup set the `backup create` flag `--snapshot-move-data`.
+
 ## Default Pod Volume backup to file system backup
 
 By default, `velero install` does not enable the use of File System Backup (FSB) to take backups of all pod volumes. You must apply an [annotation](file-system-backup.md/#using-opt-in-pod-volume-backup) to every pod which contains volumes for Velero to use FSB for the backup.

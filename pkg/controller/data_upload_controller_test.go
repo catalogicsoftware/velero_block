@@ -306,6 +306,7 @@ func TestReconcile(t *testing.T) {
 		name                string
 		du                  *velerov2alpha1api.DataUpload
 		pod                 *corev1.Pod
+		pvc                 *corev1.PersistentVolumeClaim
 		snapshotExposerList map[velerov2alpha1api.SnapshotType]exposer.SnapshotExposer
 		dataMgr             *datapath.Manager
 		expectedProcessed   bool
@@ -345,7 +346,8 @@ func TestReconcile(t *testing.T) {
 		}, {
 			name:              "Dataupload should be accepted",
 			du:                dataUploadBuilder().Result(),
-			pod:               builder.ForPod(velerov1api.DefaultNamespace, dataUploadName).Volumes(&corev1.Volume{Name: "dataupload-1"}).Result(),
+			pod:               builder.ForPod("fake-ns", dataUploadName).Volumes(&corev1.Volume{Name: "test-pvc"}).Result(),
+			pvc:               builder.ForPersistentVolumeClaim("fake-ns", "test-pvc").Result(),
 			expectedProcessed: false,
 			expected:          dataUploadBuilder().Phase(velerov2alpha1api.DataUploadPhaseAccepted).Result(),
 			expectedRequeue:   ctrl.Result{},
@@ -445,6 +447,11 @@ func TestReconcile(t *testing.T) {
 
 			if test.pod != nil {
 				err = r.client.Create(ctx, test.pod)
+				require.NoError(t, err)
+			}
+
+			if test.pvc != nil {
+				err = r.client.Create(ctx, test.pvc)
 				require.NoError(t, err)
 			}
 

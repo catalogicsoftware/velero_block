@@ -592,11 +592,11 @@ func TestBackup(t *testing.T) {
 			expectedError: errors.New("Unable to read dir"),
 		},
 		{
-			name:          "Unable to handle block mode",
+			name:          "Source path is not a block device",
 			sourcePath:    "/",
 			tags:          nil,
 			volMode:       uploader.PersistentVolumeBlock,
-			expectedError: errors.New("unable to handle block storage"),
+			expectedError: errors.New("source path / is not a block device"),
 		},
 	}
 
@@ -658,6 +658,7 @@ func TestRestore(t *testing.T) {
 		expectedBytes       int64
 		expectedCount       int32
 		expectedError       error
+		volMode             uploader.PersistentVolumeMode
 	}
 
 	// Define test cases
@@ -704,6 +705,10 @@ func TestRestore(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.volMode == "" {
+				tc.volMode = uploader.PersistentVolumeFilesystem
+			}
+
 			if tc.invalidManifestType {
 				em.Labels[manifest.TypeLabelKey] = ""
 			} else {
@@ -723,7 +728,7 @@ func TestRestore(t *testing.T) {
 			repoWriterMock.On("OpenObject", mock.Anything, mock.Anything).Return(em, nil)
 
 			progress := new(Progress)
-			bytesRestored, fileCount, err := Restore(context.Background(), repoWriterMock, progress, tc.snapshotID, tc.dest, logrus.New(), nil)
+			bytesRestored, fileCount, err := Restore(context.Background(), repoWriterMock, progress, tc.snapshotID, tc.dest, tc.volMode, logrus.New(), nil)
 
 			// Check if the returned error matches the expected error
 			if tc.expectedError != nil {
