@@ -118,6 +118,7 @@ func (kp *kopiaProvider) RunBackup(
 	tags map[string]string,
 	forceFull bool,
 	parentSnapshot string,
+	volMode uploader.PersistentVolumeMode,
 	updater uploader.ProgressUpdater) (string, bool, error) {
 	if updater == nil {
 		return "", false, errors.New("Need to initial backup progress updater first")
@@ -153,7 +154,7 @@ func (kp *kopiaProvider) RunBackup(
 	tags[uploader.SnapshotRequesterTag] = kp.requestorType
 	tags[uploader.SnapshotUploaderTag] = uploader.KopiaType
 
-	snapshotInfo, isSnapshotEmpty, err := BackupFunc(ctx, kpUploader, repoWriter, path, realSource, forceFull, parentSnapshot, tags, log)
+	snapshotInfo, isSnapshotEmpty, err := BackupFunc(ctx, kpUploader, repoWriter, path, realSource, forceFull, parentSnapshot, volMode, tags, log)
 	if err != nil {
 		if kpUploader.IsCanceled() {
 			log.Error("Kopia backup is canceled")
@@ -197,6 +198,7 @@ func (kp *kopiaProvider) RunRestore(
 	ctx context.Context,
 	snapshotID string,
 	volumePath string,
+	volMode uploader.PersistentVolumeMode,
 	updater uploader.ProgressUpdater) error {
 	log := kp.log.WithFields(logrus.Fields{
 		"snapshotID": snapshotID,
@@ -219,7 +221,7 @@ func (kp *kopiaProvider) RunRestore(
 	// We use the cancel channel to control the restore cancel, so don't pass a context with cancel to Kopia restore.
 	// Otherwise, Kopia restore will not response to the cancel control but return an arbitrary error.
 	// Kopia restore cancel is not designed as well as Kopia backup which uses the context to control backup cancel all the way.
-	size, fileCount, err := RestoreFunc(context.Background(), repoWriter, progress, snapshotID, volumePath, log, restoreCancel)
+	size, fileCount, err := RestoreFunc(context.Background(), repoWriter, progress, snapshotID, volumePath, volMode, log, restoreCancel)
 
 	if err != nil {
 		return errors.Wrapf(err, "Failed to run kopia restore")
