@@ -135,7 +135,15 @@ func (fs *fileSystemBR) StartBackup(source AccessPoint, realSource string, paren
 	}
 
 	go func() {
-		snapshotID, emptySnapshot, err := fs.uploaderProv.RunBackup(fs.ctx, source.ByPath, realSource, tags, forceFull, parentSnapshot, fs)
+		sourcePath := source.ByPath
+		volMode := uploader.PersistentVolumeFilesystem
+
+		if source.ByBlock != "" {
+			sourcePath = source.ByBlock
+			volMode = uploader.PersistentVolumeBlock
+		}
+
+		snapshotID, emptySnapshot, err := fs.uploaderProv.RunBackup(fs.ctx, sourcePath, realSource, tags, forceFull, parentSnapshot, volMode, fs)
 
 		if err == provider.ErrorCanceled {
 			fs.callbacks.OnCancelled(context.Background(), fs.namespace, fs.jobName)
@@ -155,7 +163,15 @@ func (fs *fileSystemBR) StartRestore(snapshotID string, target AccessPoint) erro
 	}
 
 	go func() {
-		err := fs.uploaderProv.RunRestore(fs.ctx, snapshotID, target.ByPath, fs)
+		targetPath := target.ByPath
+		volMode := uploader.PersistentVolumeFilesystem
+
+		if target.ByBlock != "" {
+			targetPath = target.ByBlock
+			volMode = uploader.PersistentVolumeBlock
+		}
+
+		err := fs.uploaderProv.RunRestore(fs.ctx, snapshotID, targetPath, volMode, fs)
 
 		if err == provider.ErrorCanceled {
 			fs.callbacks.OnCancelled(context.Background(), fs.namespace, fs.jobName)

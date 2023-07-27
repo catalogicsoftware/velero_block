@@ -26,6 +26,7 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/vmware-tanzu/velero/pkg/datapath"
+	"github.com/vmware-tanzu/velero/pkg/uploader"
 	"github.com/vmware-tanzu/velero/pkg/util/filesystem"
 	"github.com/vmware-tanzu/velero/pkg/util/kube"
 )
@@ -38,14 +39,19 @@ func GetPodVolumeHostPath(ctx context.Context, pod *corev1.Pod, pvcName string,
 	cli ctrlclient.Client, fs filesystem.Interface, log logrus.FieldLogger) (datapath.AccessPoint, error) {
 	logger := log.WithField("pod name", pod.Name).WithField("pod UID", pod.GetUID()).WithField("pvc", pvcName)
 
-	volDir, err := getVolumeDirectory(ctx, logger, pod, pvcName, cli)
+	volDir, volMode, err := getVolumeDirectory(ctx, logger, pod, pvcName, cli)
 	if err != nil {
 		return datapath.AccessPoint{}, errors.Wrapf(err, "error getting volume directory name for pvc %s in pod %s", pvcName, pod.Name)
 	}
 
 	logger.WithField("volDir", volDir).Info("Got volume for backup PVC")
 
-	pathGlob := fmt.Sprintf("/host_pods/%s/volumes/*/%s", string(pod.GetUID()), volDir)
+	volSubDir := "volumes"
+	if volMode == uploader.PersistentVolumeBlock {
+		volSubDir = "volumeDevices"
+	}
+
+	pathGlob := fmt.Sprintf("/host_pods/%s/%s/*/%s", string(pod.GetUID()), volSubDir, volDir)
 	logger.WithField("pathGlob", pathGlob).Debug("Looking for path matching glob")
 
 	path, err := singlePathMatch(pathGlob, fs, logger)
@@ -55,7 +61,9 @@ func GetPodVolumeHostPath(ctx context.Context, pod *corev1.Pod, pvcName string,
 
 	logger.WithField("path", path).Info("Found path matching glob")
 
-	return datapath.AccessPoint{
-		ByPath: path,
-	}, nil
+	if volMode == uploader.PersistentVolumeBlock {
+		return datapath.AccessPoint{ByBlock: path}, nil
+	}
+
+	return datapath.AccessPoint{ByPath: path}, nil
 }

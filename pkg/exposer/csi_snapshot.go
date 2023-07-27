@@ -233,9 +233,12 @@ func (e *csiSnapshotExposer) CleanUp(ctx context.Context, ownerObject corev1.Obj
 }
 
 func getVolumeModeByAccessMode(accessMode string) (corev1.PersistentVolumeMode, error) {
-	if accessMode == AccessModeFileSystem {
+	switch accessMode {
+	case AccessModeFileSystem:
 		return corev1.PersistentVolumeFilesystem, nil
-	} else {
+	case AccessModeBlock:
+		return corev1.PersistentVolumeBlock, nil
+	default:
 		return "", errors.Errorf("unsupported access mode %s", accessMode)
 	}
 }
@@ -352,6 +355,21 @@ func (e *csiSnapshotExposer) createBackupPod(ctx context.Context, ownerObject co
 
 	var gracePeriod int64 = 0
 
+	var volumeMounts []corev1.VolumeMount = nil
+	var volumeDevices []corev1.VolumeDevice = nil
+
+	if backupPVC.Spec.VolumeMode != nil && *backupPVC.Spec.VolumeMode == corev1.PersistentVolumeBlock {
+		volumeDevices = []corev1.VolumeDevice{{
+			Name:       backupPVC.Name,
+			DevicePath: "/" + backupPVC.Name,
+		}}
+	} else {
+		volumeMounts = []corev1.VolumeMount{{
+			Name:      backupPVC.Name,
+			MountPath: "/" + backupPVC.Name,
+		}}
+	}
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podName,
@@ -374,10 +392,8 @@ func (e *csiSnapshotExposer) createBackupPod(ctx context.Context, ownerObject co
 					Image:           podInfo.image,
 					ImagePullPolicy: corev1.PullNever,
 					Command:         []string{"/velero-helper", "pause"},
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      backupPVC.Name,
-						MountPath: "/" + backupPVC.Name,
-					}},
+					VolumeMounts:    volumeMounts,
+					VolumeDevices:   volumeDevices,
 				},
 			},
 			ServiceAccountName:            podInfo.serviceAccount,

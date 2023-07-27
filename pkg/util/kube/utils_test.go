@@ -204,7 +204,7 @@ func TestGetVolumeDirectorySuccess(t *testing.T) {
 		}
 
 		// Function under test
-		dir, err := GetVolumeDirectory(context.Background(), logrus.StandardLogger(), tc.pod, tc.pod.Spec.Volumes[0].Name, clientBuilder.Build())
+		dir, _, err := GetVolumeDirectory(context.Background(), logrus.StandardLogger(), tc.pod, tc.pod.Spec.Volumes[0].Name, clientBuilder.Build())
 
 		require.NoError(t, err)
 		assert.Equal(t, tc.want, dir)

@@ -82,7 +82,7 @@ func (e *genericRestoreExposer) Expose(ctx context.Context, ownerObject corev1.O
 		return errors.Errorf("Target PVC %s/%s has already been bound, abort", sourceNamespace, targetPVCName)
 	}
 
-	restorePod, err := e.createRestorePod(ctx, ownerObject, hostingPodLabels, selectedNode)
+	restorePod, err := e.createRestorePod(ctx, ownerObject, targetPVC, hostingPodLabels, selectedNode)
 	if err != nil {
 		return errors.Wrapf(err, "error to create restore pod")
 	}
@@ -247,7 +247,8 @@ func (e *genericRestoreExposer) RebindVolume(ctx context.Context, ownerObject co
 	return nil
 }
 
-func (e *genericRestoreExposer) createRestorePod(ctx context.Context, ownerObject corev1.ObjectReference, label map[string]string, selectedNode string) (*corev1.Pod, error) {
+func (e *genericRestoreExposer) createRestorePod(ctx context.Context, ownerObject corev1.ObjectReference, targetPVC *corev1.PersistentVolumeClaim,
+	label map[string]string, selectedNode string) (*corev1.Pod, error) {
 	restorePodName := ownerObject.Name
 	restorePVCName := ownerObject.Name
 
@@ -257,6 +258,21 @@ func (e *genericRestoreExposer) createRestorePod(ctx context.Context, ownerObjec
 	}
 
 	var gracePeriod int64 = 0
+
+	var volumeMounts []corev1.VolumeMount = nil
+	var volumeDevices []corev1.VolumeDevice = nil
+
+	if targetPVC.Spec.VolumeMode != nil && *targetPVC.Spec.VolumeMode == corev1.PersistentVolumeBlock {
+		volumeDevices = []corev1.VolumeDevice{{
+			Name:       restorePVCName,
+			DevicePath: "/" + restorePVCName,
+		}}
+	} else {
+		volumeMounts = []corev1.VolumeMount{{
+			Name:      restorePVCName,
+			MountPath: "/" + restorePVCName,
+		}}
+	}
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -280,10 +296,8 @@ func (e *genericRestoreExposer) createRestorePod(ctx context.Context, ownerObjec
 					Image:           podInfo.image,
 					ImagePullPolicy: corev1.PullNever,
 					Command:         []string{"/velero-helper", "pause"},
-					VolumeMounts: []corev1.VolumeMount{{
-						Name:      restorePVCName,
-						MountPath: "/" + restorePVCName,
-					}},
+					VolumeMounts:    volumeMounts,
+					VolumeDevices:   volumeDevices,
 				},
 			},
 			ServiceAccountName:            podInfo.serviceAccount,

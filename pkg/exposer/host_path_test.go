@@ -29,22 +29,25 @@ import (
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"github.com/vmware-tanzu/velero/pkg/builder"
 	velerotest "github.com/vmware-tanzu/velero/pkg/test"
+	"github.com/vmware-tanzu/velero/pkg/uploader"
 	"github.com/vmware-tanzu/velero/pkg/util/filesystem"
 )
 
 func TestGetPodVolumeHostPath(t *testing.T) {
 	tests := []struct {
 		name             string
-		getVolumeDirFunc func(context.Context, logrus.FieldLogger, *corev1.Pod, string, ctrlclient.Client) (string, error)
-		pathMatchFunc    func(string, filesystem.Interface, logrus.FieldLogger) (string, error)
-		pod              *corev1.Pod
-		pvc              string
-		err              string
+		getVolumeDirFunc func(context.Context, logrus.FieldLogger, *corev1.Pod, string, ctrlclient.Client) (
+			string, uploader.PersistentVolumeMode, error)
+		pathMatchFunc func(string, filesystem.Interface, logrus.FieldLogger) (string, error)
+		pod           *corev1.Pod
+		pvc           string
+		err           string
 	}{
 		{
 			name: "get volume dir fail",
-			getVolumeDirFunc: func(context.Context, logrus.FieldLogger, *corev1.Pod, string, ctrlclient.Client) (string, error) {
-				return "", errors.New("fake-error-1")
+			getVolumeDirFunc: func(context.Context, logrus.FieldLogger, *corev1.Pod, string, ctrlclient.Client) (
+				string, uploader.PersistentVolumeMode, error) {
+				return "", "", errors.New("fake-error-1")
 			},
 			pod: builder.ForPod(velerov1api.DefaultNamespace, "fake-pod-1").Result(),
 			pvc: "fake-pvc-1",
@@ -52,8 +55,9 @@ func TestGetPodVolumeHostPath(t *testing.T) {
 		},
 		{
 			name: "single path match fail",
-			getVolumeDirFunc: func(context.Context, logrus.FieldLogger, *corev1.Pod, string, ctrlclient.Client) (string, error) {
-				return "", nil
+			getVolumeDirFunc: func(context.Context, logrus.FieldLogger, *corev1.Pod, string, ctrlclient.Client) (
+				string, uploader.PersistentVolumeMode, error) {
+				return "", "", nil
 			},
 			pathMatchFunc: func(string, filesystem.Interface, logrus.FieldLogger) (string, error) {
 				return "", errors.New("fake-error-2")
