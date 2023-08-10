@@ -622,8 +622,12 @@ func (r *DataUploadReconciler) closeDataPath(ctx context.Context, duName string)
 
 func (r *DataUploadReconciler) setupExposeParam(du *velerov2alpha1api.DataUpload) (interface{}, error) {
 	if du.Spec.SnapshotType == velerov2alpha1api.SnapshotTypeCSI {
-		pvc, err := r.kubeClient.CoreV1().PersistentVolumeClaims(du.Spec.SourceNamespace).Get(context.Background(),
-			du.Spec.SourcePVC, metav1.GetOptions{})
+		pvc := &corev1.PersistentVolumeClaim{}
+		err := r.client.Get(context.Background(), types.NamespacedName{
+			Namespace: du.Spec.SourceNamespace,
+			Name:      du.Spec.SourcePVC,
+		}, pvc)
+
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get PVC %s/%s", du.Spec.SourceNamespace, du.Spec.SourcePVC)
 		}
