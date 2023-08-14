@@ -351,7 +351,7 @@ func Restore(ctx context.Context, rep repo.RepositoryWriter, progress *Progress,
 	var output restore.Output = fsOutput
 	if volMode == uploader.PersistentVolumeBlock {
 		output = &BlockOutput{
-			kopiaOutput: fsOutput,
+			fsOutput,
 		}
 	}
 
