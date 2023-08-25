@@ -261,6 +261,7 @@ func (kr *kubernetesRestorer) RestoreWithResolvers(
 		backup:                  req.Backup,
 		snapshotVolumes:         req.Backup.Spec.SnapshotVolumes,
 		restorePVs:              req.Restore.Spec.RestorePVs,
+		sparseFiles:             req.Restore.Spec.SparseFiles,
 		volumeSnapshots:         req.VolumeSnapshots,
 		volumeSnapshotterGetter: volumeSnapshotterGetter,
 		kbclient:                kr.kbClient,

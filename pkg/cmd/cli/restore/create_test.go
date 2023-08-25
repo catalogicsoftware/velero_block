@@ -70,6 +70,7 @@ func TestCreateCommand(t *testing.T) {
 		backupName := "backup1"
 		scheduleName := "schedule1"
 		restoreVolumes := "true"
+		sparseFiles := "true"
 		preserveNodePorts := "true"
 		labels := "c=foo"
 		includeNamespaces := "app1,app2"
@@ -92,6 +93,7 @@ func TestCreateCommand(t *testing.T) {
 		flags.Parse([]string{"--from-backup", backupName})
 		flags.Parse([]string{"--from-schedule", scheduleName})
 		flags.Parse([]string{"--restore-volumes", restoreVolumes})
+		flags.Parse([]string{"--sparse-files", sparseFiles})
 		flags.Parse([]string{"--preserve-nodeports", preserveNodePorts})
 		flags.Parse([]string{"--labels", labels})
 		flags.Parse([]string{"--existing-resource-policy", existingResourcePolicy})
@@ -127,6 +129,7 @@ func TestCreateCommand(t *testing.T) {
 		require.Equal(t, backupName, o.BackupName)
 		require.Equal(t, scheduleName, o.ScheduleName)
 		require.Equal(t, restoreVolumes, o.RestoreVolumes.String())
+		require.Equal(t, sparseFiles, o.SparseFiles.String())
 		require.Equal(t, preserveNodePorts, o.PreserveNodePorts.String())
 		require.Equal(t, labels, o.Labels.String())
 		require.Equal(t, includeNamespaces, o.IncludeNamespaces.String())

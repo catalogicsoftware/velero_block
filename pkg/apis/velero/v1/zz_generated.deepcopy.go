@@ -1300,6 +1300,11 @@ func (in *RestoreSpec) DeepCopyInto(out *RestoreSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.SparseFiles != nil {
+		in, out := &in.SparseFiles, &out.SparseFiles
+		*out = new(bool)
+		**out = **in
+	}
 	if in.RestoreStatus != nil {
 		in, out := &in.RestoreStatus, &out.RestoreStatus
 		*out = new(RestoreStatusSpec)

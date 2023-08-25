@@ -40,6 +40,7 @@ type pvRestorer struct {
 	backup                  *api.Backup
 	snapshotVolumes         *bool
 	restorePVs              *bool
+	sparseFiles             *bool
 	volumeSnapshots         []*volume.Snapshot
 	volumeSnapshotterGetter VolumeSnapshotterGetter
 	kbclient                client.Client

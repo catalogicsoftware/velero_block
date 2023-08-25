@@ -81,6 +81,7 @@ type CreateOptions struct {
 	ScheduleName              string
 	RestoreName               string
 	RestoreVolumes            flag.OptionalBool
+	SparseFiles               flag.OptionalBool
 	PreserveNodePorts         flag.OptionalBool
 	Labels                    flag.Map
 	IncludeNamespaces         flag.StringArray
@@ -106,6 +107,7 @@ func NewCreateOptions() *CreateOptions {
 		IncludeNamespaces:       flag.NewStringArray("*"),
 		NamespaceMappings:       flag.NewMap().WithEntryDelimiter(',').WithKeyValueDelimiter(':'),
 		RestoreVolumes:          flag.NewOptionalBool(nil),
+		SparseFiles:             flag.NewOptionalBool(nil),
 		PreserveNodePorts:       flag.NewOptionalBool(nil),
 		IncludeClusterResources: flag.NewOptionalBool(nil),
 	}
@@ -128,6 +130,9 @@ func (o *CreateOptions) BindFlags(flags *pflag.FlagSet) {
 	f := flags.VarPF(&o.RestoreVolumes, "restore-volumes", "", "Whether to restore volumes from snapshots.")
 	// this allows the user to just specify "--restore-volumes" as shorthand for "--restore-volumes=true"
 	// like a normal bool flag
+	f.NoOptDefVal = cmd.TRUE
+
+	f = flags.VarPF(&o.SparseFiles, "sparse-files", "", "Whether to restore files as sparse.")
 	f.NoOptDefVal = cmd.TRUE
 
 	f = flags.VarPF(&o.PreserveNodePorts, "preserve-nodeports", "", "Whether to preserve nodeports of Services when restoring.")
@@ -305,6 +310,7 @@ func (o *CreateOptions) Run(c *cobra.Command, f client.Factory) error {
 			NamespaceMapping:        o.NamespaceMappings.Data(),
 			LabelSelector:           o.Selector.LabelSelector,
 			RestorePVs:              o.RestoreVolumes.Value,
+			SparseFiles:             o.SparseFiles.Value,
 			PreserveNodePorts:       o.PreserveNodePorts.Value,
 			IncludeClusterResources: o.IncludeClusterResources.Value,
 			ResourceModifier:        resModifiers,

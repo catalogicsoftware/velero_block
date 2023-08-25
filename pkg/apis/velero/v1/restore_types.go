@@ -87,6 +87,11 @@ type RestoreSpec struct {
 	// +nullable
 	RestorePVs *bool `json:"restorePVs,omitempty"`
 
+	// SparseFiles specifies whether to restore files as sparse
+	// +optional
+	// +nullable
+	SparseFiles *bool `json:"sparseFiles,omitempty"`
+
 	// RestoreStatus specifies which resources we should restore the status
 	// field. If nil, no objects are included. Optional.
 	// +optional

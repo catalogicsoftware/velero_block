@@ -148,6 +148,12 @@ func (b *RestoreBuilder) RestorePVs(val bool) *RestoreBuilder {
 	return b
 }
 
+// SparseFiles sets the Restore's sparse files option.
+func (b *RestoreBuilder) SparseFiles(val bool) *RestoreBuilder {
+	b.object.Spec.SparseFiles = &val
+	return b
+}
+
 // PreserveNodePorts sets the Restore's preserved NodePorts.
 func (b *RestoreBuilder) PreserveNodePorts(val bool) *RestoreBuilder {
 	b.object.Spec.PreserveNodePorts = &val
